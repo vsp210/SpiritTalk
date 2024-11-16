@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Room: {{ room_name }}</title>
+</head>
+<body>
+    <h2>Chat Room: {{ room_name }}</h2>
+
+    <!-- Поле для ввода имени пользователя -->
+    <label for="username-input">Username:</label>
+    <input id="username-input" type="text" size="30" /><br><br>
+
+    <textarea id="chat-log" cols="100" rows="20" readonly></textarea><br>
+    <input id="chat-message-input" type="text" size="100" /><br>
+    <button id="send-button">Send</button>  <!-- Добавлена кнопка Send -->
+
+    <script>
+        const roomName = "{{ room_name }}";
+        const chatSocket = new WebSocket(
+            (window.location.protocol === "https:" ? "wss://" : "ws://") +
+            window.location.host +
+            '/ws/chat/' + roomName + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            document.querySelector('#chat-log').value += (data.username + ': ' + data.message + '\n');
+        };
+
+        function sendMessage() {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const usernameInputDom = document.querySelector('#username-input');
+            const message = messageInputDom.value;
+            const username = usernameInputDom.value || 'Anonymous';  // Используем 'Anonymous', если имя не указано
+
+            chatSocket.send(JSON.stringify({
+                'username': username,  // Убедитесь, что это поле отправляется
+                'message': message
+            }));
+            messageInputDom.value = '';  // Очистка поля ввода
+        }
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // Enter key
+                sendMessage();
+            }
+        };
+
+        document.querySelector('#send-button').onclick = function(e) {
+            sendMessage();
+        };
+    </script>
+</body>
+</html>
